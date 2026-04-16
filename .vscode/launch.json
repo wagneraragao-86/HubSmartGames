@@ -1,0 +1,27 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Hub Smart Games - Debug",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "console": "integratedTerminal",
+      "toolArgs": [
+        "--target-platform=android-arm64",
+        "-v"
+      ]
+    },
+    {
+      "name": "Hub Smart Games - iOS",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "console": "integratedTerminal",
+      "args": [
+        "-d",
+        "macos"
+      ]
+    }
+  ]
+}

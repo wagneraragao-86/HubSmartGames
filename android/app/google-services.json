@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "192373320678",
+    "project_id": "hubsmartgames",
+    "storage_bucket": "hubsmartgames.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:192373320678:android:00519cef6fdd4ccc744427",
+        "android_client_info": {
+          "package_name": "com.example.hub_smart_games"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "192373320678-7bdmmjpl1brkp5ipo7o9mvn3655hgush.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.hub_smart_games",
+            "certificate_hash": "15c10a2ab8f8696505079d44cbb311e984f2fe44"
+          }
+        },
+        {
+          "client_id": "192373320678-va7qbkvsuu1jiafsflpjohh4mi4apbou.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD3X3kiGMOtEPcEa5x_slhCE6L0_3MK5oY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "192373320678-va7qbkvsuu1jiafsflpjohh4mi4apbou.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "192373320678-bvqpflud325epla3mcbna6qo9hkfni8o.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.hubsmartgames"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

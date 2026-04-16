@@ -1,0 +1,18 @@
+# Flutter files
+*.dart binary diff=dart
+*.flutter diff=flutter
+*.gradle diff=gradle
+
+# Platform-specific files
+**/ios/** diff=objc
+**/android/** diff=java
+**/windows/** diff=cpp
+**/linux/** diff=cpp
+**/macos/** diff=cpp
+**/web/** diff=js
+
+# Generated files
+.dart_tool/ binary
+build/ binary
+*.lock binary
+pubspec.lock binary
