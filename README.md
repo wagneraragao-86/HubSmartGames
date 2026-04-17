@@ -6,12 +6,14 @@ Um aplicativo mobile desenvolvido em Flutter para um hub de jogos com suporte a 
 
 - **Snake**: O clássico jogo da cobrinha com sistema de níveis progressivos
 - **Torre de Hanói**: Quebra-cabeça clássico com pontuação baseada em eficiência
+- **Hidro flux**: puzzle de canos para chegar em um determinado destino
 
 ## ✨ Funcionalidades
 
 ### Jogos
 - ✅ Jogo Snake com níveis e pontuação dinâmica
 - ✅ Torre de Hanói com cálculo de eficiência
+- ✅ Hidro flux com contagem de movimentos 
 - ✅ Funcionamento offline
 - ✅ Salva automático de scores
 

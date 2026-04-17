@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../games/hanoi_game.dart';
@@ -22,6 +23,21 @@ class _HanoiScreenState extends State<HanoiScreen> {
   void initState() {
     super.initState();
     game = TowerOfHanoi(numberOfDisks: selectedDisks);
+    // Force landscape orientation for Hanoi Tower
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+  }
+
+  @override
+  void dispose() {
+    // Reset to portrait orientation when leaving Hanoi Tower
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    super.dispose();
   }
 
   void _showGameCompletedDialog() {
@@ -121,19 +137,44 @@ class _HanoiScreenState extends State<HanoiScreen> {
     });
   }
 
-  Widget _buildDiskChip(int diskCount) {
-    final isSelected = selectedDisks == diskCount;
-    return ChoiceChip(
-      label: Text('$diskCount'),
-      selected: isSelected,
-      onSelected: (_) => _changeDiskCount(diskCount),
-      selectedColor: AppTheme.accentCyan,
-      backgroundColor: AppTheme.cardBackground,
-      labelStyle: TextStyle(
-        color: isSelected ? AppTheme.textPrimary : AppTheme.textSecondary,
-        fontWeight: FontWeight.w700,
+  Widget _buildSidebarButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback? onPressed,
+  }) {
+    return Tooltip(
+      message: label,
+      child: SizedBox(
+        width: 60,
+        height: 60,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: onPressed != null ? AppTheme.cardBackground : AppTheme.surface,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: onPressed != null ? AppTheme.accentCyan : AppTheme.border,
+              width: 1.5,
+            ),
+            boxShadow: onPressed != null
+                ? [
+                    BoxShadow(
+                      color: AppTheme.accentCyan.withAlpha(30),
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                    )
+                  ]
+                : null,
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: IconButton(
+              onPressed: onPressed,
+              icon: Icon(icon, size: 24, color: AppTheme.textPrimary),
+              splashRadius: 28,
+            ),
+          ),
+        ),
       ),
-      side: BorderSide(color: isSelected ? AppTheme.accentCyan : AppTheme.border),
     );
   }
 
@@ -142,88 +183,163 @@ class _HanoiScreenState extends State<HanoiScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Torre de Hanói'),
-      ),
-      body: Column(
-        children: [
-          // Nivel de dificuldade
+        actions: [
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            color: AppTheme.surface,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Número de Discos',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: List.generate(8, (index) {
-                    final diskCount = index + 3;
-                    return _buildDiskChip(diskCount);
-                  }),
-                ),
-              ],
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppTheme.cardBackground,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.border),
             ),
-          ),
-          // Info
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: AppTheme.surface,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Movimentos: ${game.moves}/${game.minMovesNeeded}',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  'Discos: ${game.numberOfDisks}',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ),
-          // Game Area
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildTower(0),
-                  _buildTower(1),
-                  _buildTower(2),
-                ],
+            child: Text(
+              'Mov: ${game.moves}/${game.minMovesNeeded}',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
               ),
             ),
           ),
-          // Buttons
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppTheme.cardBackground,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.border),
+            ),
+            child: Text(
+              'Discos: ${game.numberOfDisks}',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+      body: Row(
+        children: [
+          Expanded(
+            child: Column(
               children: [
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      game.resetGame();
-                    });
-                  },
-                  child: const Text('Resetar'),
+                // Game Area
+                Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.cardBackground.withAlpha(50),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppTheme.border, width: 1),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildTower(0),
+                          _buildTower(1),
+                          _buildTower(2),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-                ElevatedButton(
-                  onPressed: game.isSolved()
-                      ? null
-                      : () {
+              ],
+            ),
+          ),
+          Container(
+            width: 180,
+            decoration: BoxDecoration(
+              color: AppTheme.surface,
+              border: Border(left: BorderSide(color: AppTheme.border, width: 1)),
+            ),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'DISCOS',
+                        style: TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.cardBackground,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppTheme.border),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<int>(
+                            value: selectedDisks,
+                            isExpanded: true,
+                            icon: Icon(Icons.keyboard_arrow_down, color: AppTheme.accentCyan),
+                            dropdownColor: AppTheme.cardBackground,
+                            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
+                            items: List.generate(8, (index) {
+                              final disks = index + 3;
+                              return DropdownMenuItem<int>(
+                                value: disks,
+                                child: Text('$disks discos'),
+                              );
+                            }),
+                            onChanged: (value) {
+                              if (value != null) {
+                                _changeDiskCount(value);
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(color: AppTheme.border),
+                const SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    children: [
+                      _buildSidebarButton(
+                        icon: Icons.refresh,
+                        label: 'Reset',
+                        onPressed: () {
                           setState(() {
-                            game.undo();
+                            game.resetGame();
                           });
                         },
-                  child: const Text('Desfazer'),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildSidebarButton(
+                        icon: Icons.undo,
+                        label: 'Desfazer',
+                        onPressed: game.isSolved()
+                            ? null
+                            : () {
+                                setState(() {
+                                  game.undo();
+                                });
+                              },
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'Toque nas torres à esquerda para mover os discos. A barra à direita mantém os controles leves e simples.',
+                    style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ],
             ),
@@ -247,8 +363,9 @@ class _HanoiScreenState extends State<HanoiScreen> {
           }
         });
       },
-      child: Container(
-        padding: const EdgeInsets.all(16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         decoration: BoxDecoration(
           color: game.selectedTowerIndex == towerIndex
               ? AppTheme.accentCyan.withAlpha(77)
@@ -257,7 +374,16 @@ class _HanoiScreenState extends State<HanoiScreen> {
             color: game.selectedTowerIndex == towerIndex ? AppTheme.accentCyan : AppTheme.border,
             width: 2,
           ),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: game.selectedTowerIndex == towerIndex
+              ? [
+                  BoxShadow(
+                    color: AppTheme.accentCyan.withAlpha(50),
+                    blurRadius: 8,
+                    spreadRadius: 2,
+                  )
+                ]
+              : null,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -271,33 +397,95 @@ class _HanoiScreenState extends State<HanoiScreen> {
               child: Stack(
                 alignment: Alignment.bottomCenter,
                 children: [
-                  // Base
+                  // Base sólida
                   Container(
-                    width: 60,
-                    height: 4,
-                    color: AppTheme.textPrimary,
+                    width: 180,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: AppTheme.cardBackground,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppTheme.textPrimary, width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.textPrimary.withAlpha(100),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Poste vertical
+                  Positioned(
+                    bottom: 12,
+                    child: Container(
+                      width: 10,
+                      height: MediaQuery.of(context).size.height * 0.6,
+                      decoration: BoxDecoration(
+                        color: AppTheme.textPrimary,
+                        borderRadius: BorderRadius.circular(5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.textPrimary.withAlpha(150),
+                            blurRadius: 8,
+                            offset: const Offset(0, 0),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                   // Discos
                   ...List.generate(game.towers[towerIndex].length, (index) {
                     final disk = game.towers[towerIndex][index];
-                    final width = 20.0 + (disk * 15.0);
-                    return Positioned(
-                      bottom: 16.0 + (index * 20.0),
-                      child: Container(
-                        width: width,
-                        height: 16,
-                        decoration: BoxDecoration(
-                          color: _getDiskColor(disk),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: AppTheme.textPrimary, width: 1),
-                        ),
-                        child: Center(
-                          child: Text(
-                            '$disk',
-                            style: const TextStyle(
-                              color: AppTheme.textPrimary,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 10,
+                    final width = 30.0 + (disk * 12.0);
+                    return AnimatedPositioned(
+                      duration: const Duration(milliseconds: 300),
+                      bottom: 20.0 + (index * 16.0),
+                      child: AnimatedOpacity(
+                        duration: const Duration(milliseconds: 200),
+                        opacity: game.selectedTowerIndex == towerIndex ? 0.9 : 1.0,
+                        child: Container(
+                          width: width,
+                          height: 18,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                _getDiskColor(disk),
+                                _getDiskColor(disk).withAlpha(200),
+                              ],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
+                            borderRadius: BorderRadius.circular(9),
+                            border: Border.all(color: AppTheme.textPrimary, width: 1),
+                            boxShadow: [
+                              BoxShadow(
+                                color: _getDiskColor(disk).withAlpha(100),
+                                blurRadius: 6,
+                                offset: const Offset(0, 3),
+                              ),
+                              if (game.selectedTowerIndex == towerIndex)
+                                BoxShadow(
+                                  color: AppTheme.accentCyan.withAlpha(150),
+                                  blurRadius: 12,
+                                  spreadRadius: 2,
+                                ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              '$disk',
+                              style: TextStyle(
+                                color: AppTheme.textPrimary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                                shadows: [
+                                  Shadow(
+                                    color: AppTheme.background,
+                                    offset: const Offset(1, 1),
+                                    blurRadius: 2,
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -315,13 +503,14 @@ class _HanoiScreenState extends State<HanoiScreen> {
 
   Color _getDiskColor(int disk) {
     const colors = [
-      AppTheme.accentRed,
-      AppTheme.accentCyan,
-      AppTheme.accentGreen,
-      AppTheme.accentPurple,
-      AppTheme.accentCyan,
-      AppTheme.accentPurple,
-      AppTheme.accentRed,
+      Color(0xFFFF6B6B), // Vermelho coral
+      Color(0xFF4ECDC4), // Turquesa
+      Color(0xFF45B7D1), // Azul céu
+      Color(0xFFF9CA24), // Amarelo sol
+      Color(0xFFF0932B), // Laranja
+      Color(0xFFE84393), // Rosa magenta
+      Color(0xFF6C5CE7), // Roxo
+      Color(0xFF00B894), // Verde esmeralda
     ];
     return colors[disk % colors.length];
   }

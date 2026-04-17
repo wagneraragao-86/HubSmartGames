@@ -119,37 +119,93 @@ class _ReactionScreenState extends State<ReactionScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Reação'),
+        actions: [
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppTheme.cardBackground,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.border),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Melhor',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+                Text(
+                  bestScore != null ? '${bestScore.points} pts' : '---',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppTheme.cardBackground,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.border),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Último',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+                Text(
+                  _currentScore > 0 ? '$_currentScore pts' : '---',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Column(
         children: [
+          // Instructions
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             color: AppTheme.surface,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const Text(
                   'Teste seu tempo de resposta',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Toque em INICIAR e espere o botão ficar verde. Clique o mais rápido possível para marcar pontos.',
                   style: const TextStyle(color: AppTheme.textSecondary),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildStatusBadge(
-                        'Melhor', bestScore != null ? '${bestScore.points} pts' : '---'),
-                    _buildStatusBadge('Último', _currentScore > 0 ? '$_currentScore pts' : '---'),
-                  ],
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),
           ),
+          // Game Area
           Expanded(
             child: Center(
               child: SizedBox(
@@ -198,60 +254,43 @@ class _ReactionScreenState extends State<ReactionScreen> {
               ),
             ),
           ),
+          // Status Message
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Column(
+            child: Text(
+              _message,
+              style: const TextStyle(color: AppTheme.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          // Controls
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
               children: [
-                Text(_message, style: const TextStyle(color: AppTheme.textSecondary)),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: _state == ReactionState.result ? _saveScore : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.accentCyan,
-                          foregroundColor: AppTheme.textPrimary,
-                        ),
-                        child: const Text('Salvar Score'),
-                      ),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _state == ReactionState.result ? _saveScore : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.accentCyan,
+                      foregroundColor: AppTheme.textPrimary,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: _startRound,
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppTheme.accentCyan),
-                        ),
-                        child: const Text('Reiniciar'),
-                      ),
+                    child: const Text('Salvar Score'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _startRound,
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppTheme.accentCyan),
                     ),
-                  ],
+                    child: const Text('Reiniciar'),
+                  ),
                 ),
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(String label, String value) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppTheme.cardBackground,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
-          const SizedBox(height: 4),
-          Text(value,
-              style: const TextStyle(
-                  fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
         ],
       ),
     );

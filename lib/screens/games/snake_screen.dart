@@ -187,89 +187,67 @@ class _SnakeScreenState extends State<SnakeScreen> {
               }
             },
           ),
+          actions: [
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppTheme.cardBackground,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.border),
+              ),
+              child: Text(
+                'Score: ${game.score}',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+            ),
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppTheme.cardBackground,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.border),
+              ),
+              child: Text(
+                'Level: ${game.level}',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+            ),
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppTheme.cardBackground,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.border),
+              ),
+              child: Text(
+                'Snake: ${game.snake.length}',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
         ),
         body: Column(
           children: [
-            // Difficulty selector
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              color: AppTheme.surface,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Velocidade da Cobra',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: snakeSpeeds.map((speed) {
-                      final isSelected = gameDifficulty == speed;
-                      return ChoiceChip(
-                        avatar: Icon(
-                          _snakeSpeedIcon(speed),
-                          size: 18,
-                          color: isSelected ? AppTheme.textPrimary : AppTheme.accentCyan,
-                        ),
-                        label: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('${_snakeSpeedLabel(speed)}'),
-                            Text('$speed ms',
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    color: isSelected
-                                        ? AppTheme.textPrimary
-                                        : AppTheme.textSecondary)),
-                          ],
-                        ),
-                        selected: isSelected,
-                        onSelected: (_) => _changeSpeed(speed),
-                        selectedColor: AppTheme.accentCyan,
-                        backgroundColor: AppTheme.cardBackground,
-                        labelStyle: TextStyle(
-                          color: isSelected ? AppTheme.textPrimary : AppTheme.textSecondary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        side: BorderSide(
-                          color: isSelected ? AppTheme.accentCyan : AppTheme.border,
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-              ),
-            ),
-            // Score e Info
-            Container(
-              padding: const EdgeInsets.all(16),
-              color: AppTheme.surface,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Score: ${game.score}',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    'Level: ${game.level}',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    'Snake: ${game.snake.length}',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
             // Game Area
             Expanded(
               child: Container(
-                margin: const EdgeInsets.all(8),
+                margin: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   border: Border.all(color: AppTheme.textPrimary),
                   borderRadius: BorderRadius.circular(8),
@@ -281,15 +259,65 @@ class _SnakeScreenState extends State<SnakeScreen> {
               ),
             ),
             // Controls
-            Padding(
+            Container(
               padding: const EdgeInsets.all(16),
+              color: AppTheme.surface,
               child: Column(
                 children: [
+                  // Speed selector
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.cardBackground,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppTheme.border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Velocidade da Cobra',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        DropdownButtonHideUnderline(
+                          child: DropdownButton<int>(
+                            value: gameDifficulty,
+                            isExpanded: true,
+                            icon: Icon(Icons.keyboard_arrow_down, color: AppTheme.accentCyan),
+                            dropdownColor: AppTheme.cardBackground,
+                            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
+                            items: snakeSpeeds.map((speed) {
+                              return DropdownMenuItem<int>(
+                                value: speed,
+                                child: Row(
+                                  children: [
+                                    Icon(_snakeSpeedIcon(speed),
+                                        size: 18, color: AppTheme.accentCyan),
+                                    const SizedBox(width: 8),
+                                    Text('${_snakeSpeedLabel(speed)} (${speed}ms)'),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              if (value != null) {
+                                _changeSpeed(value);
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Direction controls
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.arrow_upward),
+                        icon: const Icon(Icons.arrow_upward, size: 32),
                         onPressed: () => game.changeDirection(Direction.up),
                       ),
                     ],
@@ -298,11 +326,11 @@ class _SnakeScreenState extends State<SnakeScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.arrow_back),
+                        icon: const Icon(Icons.arrow_back, size: 32),
                         onPressed: () => game.changeDirection(Direction.left),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.pause),
+                        icon: const Icon(Icons.pause, size: 24),
                         onPressed: () {
                           setState(() {
                             game.togglePause();
@@ -310,7 +338,7 @@ class _SnakeScreenState extends State<SnakeScreen> {
                         },
                       ),
                       IconButton(
-                        icon: const Icon(Icons.arrow_forward),
+                        icon: const Icon(Icons.arrow_forward, size: 32),
                         onPressed: () => game.changeDirection(Direction.right),
                       ),
                     ],
@@ -319,15 +347,16 @@ class _SnakeScreenState extends State<SnakeScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.arrow_downward),
+                        icon: const Icon(Icons.arrow_downward, size: 32),
                         onPressed: () => game.changeDirection(Direction.down),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 8),
                   Text(
                     game.isPaused ? 'PAUSADO' : '',
                     style: const TextStyle(
-                      fontSize: 20,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.accentRed,
                     ),
