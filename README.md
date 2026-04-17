@@ -37,7 +37,7 @@ Um aplicativo mobile desenvolvido em Flutter para um hub de jogos com suporte a 
 
 1. Clone o repositório:
 ```bash
-git clone <repo-url>
+git clone <https://github.com/wagneraragao-86/HubSmartGames.git>
 cd HubSmartGames
 ```
 

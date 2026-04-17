@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../providers/player_provider.dart';
 import '../theme/app_theme.dart';
 import 'auth_screen.dart';
+import 'games/hidro_flux_screen.dart';
 import 'games/hanoi_screen.dart';
 import 'games/reaction_screen.dart';
 import 'games/snake_screen.dart';
@@ -175,6 +176,9 @@ class _GameHubScreenState extends State<GameHubScreen> {
         break;
       case 'reaction':
         screen = const ReactionScreen();
+        break;
+      case 'hidro_flux':
+        screen = const HidroFluxScreen();
         break;
       default:
         return;

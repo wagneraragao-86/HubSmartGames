@@ -26,6 +26,12 @@ class Game {
         icon: '🗼',
       ),
       Game(
+        id: 'hidro_flux',
+        name: 'Hidro Flux',
+        description: 'Conecte canos e faça o líquido fluir',
+        icon: '💧',
+      ),
+      Game(
         id: 'reaction',
         name: 'Reação',
         description: 'Teste seu tempo de resposta',
