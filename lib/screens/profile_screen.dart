@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
+import '../providers/player_provider.dart';
 import '../theme/app_theme.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -38,18 +39,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         title: const Text('Perfil'),
         actions: [
-          Consumer<AuthProvider>(
-            builder: (context, authProvider, _) {
-              return IconButton(
-                icon: const Icon(Icons.logout),
-                onPressed: () async {
-                  await authProvider.signOut();
-                  if (mounted) {
-                    Navigator.of(context).popUntil((route) => route.isFirst);
-                  }
-                },
-                tooltip: 'Sair',
-              );
+          Consumer2<AuthProvider, PlayerProvider>(
+            builder: (context, authProvider, playerProvider, _) {
+              final isLoggedIn = authProvider.isSignedIn || playerProvider.isLoggedIn;
+
+              if (isLoggedIn) {
+                return IconButton(
+                  icon: const Icon(Icons.logout),
+                  onPressed: () async {
+                    await playerProvider.logout();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Logout realizado com sucesso!')),
+                      );
+                    }
+                  },
+                  tooltip: 'Sair',
+                );
+              } else {
+                return IconButton(
+                  icon: const Icon(Icons.login),
+                  onPressed: () async {
+                    try {
+                      await playerProvider.loginWithGoogle();
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Login realizado com sucesso!')),
+                        );
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Erro no login: $e')),
+                        );
+                      }
+                    }
+                  },
+                  tooltip: 'Fazer Login',
+                );
+              }
             },
           ),
         ],
@@ -57,204 +85,298 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: Consumer<AuthProvider>(
         builder: (context, authProvider, _) {
           final user = authProvider.user;
+          return Consumer<PlayerProvider>(
+            builder: (context, playerProvider, _) {
+              final isLoggedIn = playerProvider.isLoggedIn;
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Avatar
-                CircleAvatar(
-                  radius: 60,
-                  backgroundImage: user?.photoURL != null ? NetworkImage(user!.photoURL!) : null,
-                  child: user?.photoURL == null
-                      ? const Icon(Icons.person, size: 60, color: AppTheme.textPrimary)
-                      : null,
-                  backgroundColor: AppTheme.accentCyan,
-                ),
-                const SizedBox(height: 24),
-
-                // Informações do usuário
-                Card(
-                  color: AppTheme.cardBackground,
-                  elevation: 6,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Informações Pessoais',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Nome
-                          TextFormField(
-                            controller: _nameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Nome de Exibição',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.person),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Nome é obrigatório';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Email (somente leitura)
-                          TextFormField(
-                            controller: _emailController,
-                            decoration: const InputDecoration(
-                              labelText: 'Email',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.email),
-                            ),
-                            readOnly: true,
-                            enabled: false,
-                          ),
-                          const SizedBox(height: 16),
-
-                          // UID (somente leitura)
-                          TextFormField(
-                            initialValue: user?.uid ?? '',
-                            decoration: const InputDecoration(
-                              labelText: 'ID do Usuário',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.fingerprint),
-                            ),
-                            readOnly: true,
-                            enabled: false,
-                          ),
-                          const SizedBox(height: 24),
-
-                          // Botão Salvar
-                          SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: ElevatedButton(
-                              onPressed: _isLoading ? null : _saveProfile,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.accentCyan,
-                                foregroundColor: AppTheme.textPrimary,
-                                elevation: 6,
-                                shadowColor: AppTheme.accentCyan.withAlpha(89),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: _isLoading
-                                  ? const CircularProgressIndicator()
-                                  : const Text('Salvar Alterações'),
-                            ),
-                          ),
-                        ],
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Avatar
+                    CircleAvatar(
+                      radius: 60,
+                      backgroundImage:
+                          user?.photoURL != null ? NetworkImage(user!.photoURL!) : null,
+                      child: user?.photoURL == null
+                          ? const Icon(Icons.person, size: 60, color: AppTheme.textPrimary)
+                          : null,
+                      backgroundColor: AppTheme.accentCyan,
+                    ),
+                    // Status do login
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isLoggedIn
+                            ? AppTheme.accentGreen.withAlpha(51)
+                            : AppTheme.accentCyan.withAlpha(51),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isLoggedIn ? AppTheme.accentGreen : AppTheme.accentCyan,
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        isLoggedIn ? 'Conta Conectada' : 'Jogando como Anônimo',
+                        style: TextStyle(
+                          color: isLoggedIn ? AppTheme.accentGreen : AppTheme.accentCyan,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                  ),
-                ),
+                    const SizedBox(height: 24),
 
-                const SizedBox(height: 24),
-
-                // Informações da conta
-                Card(
-                  color: AppTheme.cardBackground,
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Informações da Conta',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                    if (!isLoggedIn) ...[
+                      // Mensagem para usuários anônimos
+                      Card(
+                        color: AppTheme.cardBackground,
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        const SizedBox(height: 16),
-                        _buildInfoRow('Provedor', 'Google'),
-                        _buildInfoRow(
-                            'Conta criada em',
-                            user?.metadata.creationTime != null
-                                ? _formatDate(user!.metadata.creationTime!)
-                                : 'N/A'),
-                        _buildInfoRow(
-                            'Último login',
-                            user?.metadata.lastSignInTime != null
-                                ? _formatDate(user!.metadata.lastSignInTime!)
-                                : 'N/A'),
-                        _buildInfoRow(
-                            'Email verificado', user?.emailVerified == true ? 'Sim' : 'Não'),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Botão de sincronização
-                Card(
-                  color: AppTheme.cardBackground,
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Sincronização',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Seus dados são automaticamente sincronizados com a nuvem quando você joga.',
-                          style: const TextStyle(color: AppTheme.textSecondary),
-                        ),
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: OutlinedButton.icon(
-                            onPressed: _syncData,
-                            icon: const Icon(Icons.sync),
-                            label: const Text('Sincronizar Agora'),
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: AppTheme.accentCyan, width: 1.5),
-                              foregroundColor: AppTheme.accentCyan,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              const Icon(
+                                Icons.info_outline,
+                                size: 48,
+                                color: AppTheme.accentCyan,
                               ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'Jogando como Anônimo',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Você pode jogar e salvar seus scores localmente. Para acessar rankings de amigos e sincronizar seus dados, faça login com sua conta Google.',
+                                style: TextStyle(color: AppTheme.textSecondary),
+                                textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton.icon(
+                                onPressed: isLoggedIn
+                                    ? null
+                                    : () async {
+                                        try {
+                                          await playerProvider.loginWithGoogle();
+                                          if (mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text('Login realizado com sucesso!'),
+                                              ),
+                                            );
+                                          }
+                                        } catch (e) {
+                                          if (mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(content: Text('Erro no login: $e')),
+                                            );
+                                          }
+                                        }
+                                      },
+                                icon: const Icon(Icons.login),
+                                label: Text(isLoggedIn ? 'Já conectado' : 'Fazer Login'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.accentCyan,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ] else ...[
+                      // Informações do usuário autenticado
+                      Card(
+                        color: AppTheme.cardBackground,
+                        elevation: 6,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Form(
+                            key: _formKey,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Informações Pessoais',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+
+                                // Nome
+                                TextFormField(
+                                  controller: _nameController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Nome de Exibição',
+                                    border: OutlineInputBorder(),
+                                    prefixIcon: Icon(Icons.person),
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return 'Nome é obrigatório';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 16),
+
+                                // Email (somente leitura)
+                                TextFormField(
+                                  controller: _emailController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Email',
+                                    border: OutlineInputBorder(),
+                                    prefixIcon: Icon(Icons.email),
+                                  ),
+                                  readOnly: true,
+                                  enabled: false,
+                                ),
+                                const SizedBox(height: 16),
+
+                                // UID (somente leitura)
+                                TextFormField(
+                                  initialValue: user?.uid ?? '',
+                                  decoration: const InputDecoration(
+                                    labelText: 'ID do Usuário',
+                                    border: OutlineInputBorder(),
+                                    prefixIcon: Icon(Icons.fingerprint),
+                                  ),
+                                  readOnly: true,
+                                  enabled: false,
+                                ),
+                                const SizedBox(height: 24),
+
+                                // Botão Salvar
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 50,
+                                  child: ElevatedButton(
+                                    onPressed: _isLoading ? null : _saveProfile,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppTheme.accentCyan,
+                                      foregroundColor: AppTheme.textPrimary,
+                                      elevation: 6,
+                                      shadowColor: AppTheme.accentCyan.withAlpha(89),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    child: _isLoading
+                                        ? const CircularProgressIndicator()
+                                        : const Text('Salvar Alterações'),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Informações da conta
+                      Card(
+                        color: AppTheme.cardBackground,
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Informações da Conta',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              _buildInfoRow('Provedor', 'Google'),
+                              _buildInfoRow(
+                                  'Conta criada em',
+                                  user?.metadata.creationTime != null
+                                      ? _formatDate(user!.metadata.creationTime!)
+                                      : 'N/A'),
+                              _buildInfoRow(
+                                  'Último login',
+                                  user?.metadata.lastSignInTime != null
+                                      ? _formatDate(user!.metadata.lastSignInTime!)
+                                      : 'N/A'),
+                              _buildInfoRow(
+                                  'Email verificado', user?.emailVerified == true ? 'Sim' : 'Não'),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Botão de sincronização
+                      Card(
+                        color: AppTheme.cardBackground,
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Sincronização',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'Seus dados são automaticamente sincronizados com a nuvem quando você joga.',
+                                style: const TextStyle(color: AppTheme.textSecondary),
+                              ),
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                width: double.infinity,
+                                height: 50,
+                                child: OutlinedButton.icon(
+                                  onPressed: _syncData,
+                                  icon: const Icon(Icons.sync),
+                                  label: const Text('Sincronizar Agora'),
+                                  style: OutlinedButton.styleFrom(
+                                    side: const BorderSide(color: AppTheme.accentCyan, width: 1.5),
+                                    foregroundColor: AppTheme.accentCyan,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           );
         },
       ),

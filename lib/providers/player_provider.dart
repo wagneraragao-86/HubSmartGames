@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
 
 import '../models/index.dart';
 import '../services/auth_service.dart';
@@ -9,6 +10,7 @@ class PlayerProvider extends ChangeNotifier {
   final AuthService? _authService;
   Player? _currentPlayer;
   List<Player> _allPlayers = [];
+  String? _anonymousId;
 
   PlayerProvider(this.storage, {AuthService? authService}) : _authService = authService {
     _loadCurrentPlayer();
@@ -17,10 +19,25 @@ class PlayerProvider extends ChangeNotifier {
 
   Player? get currentPlayer => _currentPlayer;
   List<Player> get allPlayers => _allPlayers;
+  bool get isLoggedIn => _authService?.isSignedIn == true;
+  String get currentUserId => _currentPlayer?.id ?? _anonymousId ?? '';
 
   void _loadCurrentPlayer() {
     _currentPlayer = storage.getCurrentPlayer();
+    if (_currentPlayer == null && !isLoggedIn) {
+      _createAnonymousPlayer();
+    }
     notifyListeners();
+  }
+
+  void _createAnonymousPlayer() {
+    _anonymousId = const Uuid().v4();
+    _currentPlayer = Player(
+      id: _anonymousId!,
+      name: 'Jogador Anônimo ${_anonymousId!.substring(0, 8)}',
+      avatar: null,
+    );
+    // Não salvar no storage ainda, apenas manter em memória
   }
 
   void _loadAllPlayers() {
@@ -49,6 +66,44 @@ class PlayerProvider extends ChangeNotifier {
       await storage.savePlayer(player);
       _loadAllPlayers();
     }
+  }
+
+  Future<void> loginWithGoogle() async {
+    if (_authService == null) return;
+
+    try {
+      await _authService!.signInWithGoogle();
+      if (_authService!.isSignedIn) {
+        final googleUser = _authService!.currentUser!;
+        final player = Player(
+          id: googleUser.uid,
+          name: googleUser.displayName ?? 'Usuário',
+          avatar: googleUser.photoURL,
+        );
+        await storage.savePlayer(player);
+        _loadAllPlayers();
+
+        // Transferir progresso do usuário anônimo
+        if (_anonymousId != null) {
+          await storage.transferScores(_anonymousId!, googleUser.uid);
+          _anonymousId = null;
+        }
+
+        await selectPlayer(player.id);
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> logout() async {
+    if (_authService != null) {
+      await _authService!.signOut();
+    }
+    _currentPlayer = null;
+    _anonymousId = null;
+    _createAnonymousPlayer();
+    notifyListeners();
   }
 
   Future<void> selectPlayer(String playerId) async {

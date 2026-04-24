@@ -6,6 +6,7 @@ import '../../games/hanoi_game.dart';
 import '../../models/score.dart';
 import '../../providers/player_provider.dart';
 import '../../providers/score_provider.dart';
+import '../../services/ads_service.dart';
 import '../../theme/app_theme.dart';
 
 class HanoiScreen extends StatefulWidget {
@@ -40,11 +41,17 @@ class _HanoiScreenState extends State<HanoiScreen> {
     super.dispose();
   }
 
-  void _showGameCompletedDialog() {
+  void _showGameCompletedDialog() async {
     final playerProvider = context.read<PlayerProvider>();
     final scoreProvider = context.read<ScoreProvider>();
+    final adsService = context.read<AdsService>();
 
     final stats = game.getGameStats();
+
+    // Mostrar anúncio intersticial
+    await adsService.showInterstitialAd();
+
+    if (!mounted) return;
 
     showDialog(
       context: context,
@@ -72,7 +79,7 @@ class _HanoiScreenState extends State<HanoiScreen> {
               // Salvar score
               if (playerProvider.currentPlayer != null) {
                 final score = Score(
-                  playerId: playerProvider.currentPlayer!.id,
+                  playerId: playerProvider.currentUserId,
                   playerName: playerProvider.currentPlayer!.name,
                   gameId: 'hanoi',
                   points: _calculateScore(stats),
@@ -96,7 +103,7 @@ class _HanoiScreenState extends State<HanoiScreen> {
               // Salvar score e jogar novamente
               if (playerProvider.currentPlayer != null) {
                 final score = Score(
-                  playerId: playerProvider.currentPlayer!.id,
+                  playerId: playerProvider.currentUserId,
                   playerName: playerProvider.currentPlayer!.name,
                   gameId: 'hanoi',
                   points: _calculateScore(stats),

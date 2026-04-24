@@ -91,6 +91,27 @@ class StorageService {
     return _scoresBox_.values.map((map) => Score.fromMap(Map<String, dynamic>.from(map))).toList();
   }
 
+  Future<void> transferScores(String fromPlayerId, String toPlayerId) async {
+    final scoresToTransfer = getScoresByPlayer(fromPlayerId);
+    for (final score in scoresToTransfer) {
+      final updatedScore = Score(
+        id: score.id,
+        playerId: toPlayerId,
+        playerName: score.playerName, // Pode ser atualizado depois se necessário
+        gameId: score.gameId,
+        points: score.points,
+        duration: score.duration,
+        metadata: score.metadata,
+        date: score.date,
+      );
+      await saveScore(updatedScore);
+    }
+    // Opcional: remover scores antigos do player anônimo
+    // for (final score in scoresToTransfer) {
+    //   await _scoresBox_.delete('${score.gameId}_${score.id}');
+    // }
+  }
+
   // Firebase synchronization methods
   Future<void> syncWithFirebase() async {
     if (_authService?.isSignedIn == true && _firebaseService != null) {

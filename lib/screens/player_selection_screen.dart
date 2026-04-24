@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/player_provider.dart';
 import 'games_hub_screen.dart';
+import '../theme/app_theme.dart';
 
 class PlayerSelectionScreen extends StatefulWidget {
   const PlayerSelectionScreen({Key? key}) : super(key: key);
@@ -63,6 +64,51 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: AppTheme.cardBackground,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppTheme.border),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.accentCyan.withAlpha(24),
+                        blurRadius: 18,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        width: 92,
+                        height: 92,
+                        child: Image.asset('assets/logo.png'),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Hub Smart Games',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.textPrimary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Escolha seu jogador para continuar',
+                        style: TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 13,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
                 // Criar novo jogador
                 Card(
                   child: Padding(

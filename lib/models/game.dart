@@ -37,6 +37,18 @@ class Game {
         description: 'Teste seu tempo de resposta',
         icon: '⚡',
       ),
+      Game(
+        id: 'space_impact',
+        name: 'Space Impact',
+        description: 'Nave 2D com ondas, desafios e recompensas',
+        icon: '🚀',
+      ),
+      Game(
+        id: '2048',
+        name: '2048',
+        description: 'Una blocos iguais até chegar em 2048',
+        icon: '🔢',
+      ),
     ];
   }
 }

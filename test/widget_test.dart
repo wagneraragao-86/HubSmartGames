@@ -1,13 +1,7 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hub_smart_games/main.dart';
+import 'package:hub_smart_games/services/ads_service.dart';
 import 'package:hub_smart_games/services/auth_service.dart';
 import 'package:hub_smart_games/services/firebase_service.dart';
 import 'package:hub_smart_games/services/storage_service.dart';
@@ -17,6 +11,7 @@ void main() {
     // Build our app and trigger a frame.
     final authService = AuthService();
     final firebaseService = FirebaseService();
+    final adsService = AdsService();
     final storageService = StorageService(
       authService: authService,
       firebaseService: firebaseService,
@@ -26,6 +21,7 @@ void main() {
       authService: authService,
       firebaseService: firebaseService,
       storageService: storageService,
+      adsService: adsService,
     ));
 
     // Verify that the app builds without errors

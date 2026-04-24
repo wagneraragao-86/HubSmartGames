@@ -7,6 +7,7 @@ import '../../games/snake_game.dart';
 import '../../models/score.dart';
 import '../../providers/player_provider.dart';
 import '../../providers/score_provider.dart';
+import '../../services/ads_service.dart';
 import '../../theme/app_theme.dart';
 
 class SnakeScreen extends StatefulWidget {
@@ -86,11 +87,17 @@ class _SnakeScreenState extends State<SnakeScreen> {
     }
   }
 
-  void _showGameOverDialog() {
+  void _showGameOverDialog() async {
     final playerProvider = context.read<PlayerProvider>();
     final scoreProvider = context.read<ScoreProvider>();
+    final adsService = context.read<AdsService>();
 
     final stats = game.getGameStats();
+
+    // Mostrar anúncio intersticial
+    await adsService.showInterstitialAd();
+
+    if (!mounted) return;
 
     showDialog(
       context: context,
@@ -113,7 +120,7 @@ class _SnakeScreenState extends State<SnakeScreen> {
               // Salvar score
               if (playerProvider.currentPlayer != null) {
                 final score = Score(
-                  playerId: playerProvider.currentPlayer!.id,
+                  playerId: playerProvider.currentUserId,
                   playerName: playerProvider.currentPlayer!.name,
                   gameId: 'snake',
                   points: stats['score'],
@@ -135,7 +142,7 @@ class _SnakeScreenState extends State<SnakeScreen> {
               // Salvar score e jogar novamente
               if (playerProvider.currentPlayer != null) {
                 final score = Score(
-                  playerId: playerProvider.currentPlayer!.id,
+                  playerId: playerProvider.currentUserId,
                   playerName: playerProvider.currentPlayer!.name,
                   gameId: 'snake',
                   points: stats['score'],

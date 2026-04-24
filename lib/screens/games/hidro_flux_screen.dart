@@ -7,6 +7,7 @@ import '../../games/hidro_flux_game.dart';
 import '../../models/score.dart';
 import '../../providers/player_provider.dart';
 import '../../providers/score_provider.dart';
+import '../../services/ads_service.dart';
 import '../../theme/app_theme.dart';
 
 class HidroFluxScreen extends StatefulWidget {
@@ -66,7 +67,14 @@ class _HidroFluxScreenState extends State<HidroFluxScreen> with SingleTickerProv
     });
   }
 
-  void _nextLevel() {
+  void _nextLevel() async {
+    final adsService = context.read<AdsService>();
+
+    // Mostrar anúncio intersticial ao passar de nível
+    await adsService.showInterstitialAd();
+
+    if (!mounted) return;
+
     if (_levelIndex < HidroFluxGame.levels.length - 1) {
       setState(() {
         _levelIndex += 1;
@@ -164,14 +172,14 @@ class _HidroFluxScreenState extends State<HidroFluxScreen> with SingleTickerProv
 
     if (currentPlayer == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecione um jogador para salvar o score.')),
+        const SnackBar(content: Text('Erro: jogador não encontrado.')),
       );
       return;
     }
 
     final points = (1000 - _rotationCount * 10).clamp(100, 1000);
     final score = Score(
-      playerId: currentPlayer.id,
+      playerId: playerProvider.currentUserId,
       playerName: currentPlayer.name,
       gameId: 'hidro_flux',
       points: points,
@@ -541,7 +549,8 @@ class PipePainter extends CustomPainter {
     final hubPaint = Paint()
       ..shader = hubGradient.createShader(Rect.fromCircle(center: center, radius: radius));
 
-    canvas.drawCircle(center + const Offset(1.2, 1.2), radius, Paint()..color = Colors.black.withAlpha(35));
+    canvas.drawCircle(
+        center + const Offset(1.2, 1.2), radius, Paint()..color = Colors.black.withAlpha(35));
     canvas.drawCircle(center, radius, hubPaint);
     canvas.drawCircle(center, radius, outlinePaint);
   }

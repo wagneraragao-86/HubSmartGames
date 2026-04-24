@@ -74,11 +74,13 @@ app.*.map.json
 **/android/**/gradlew.bat
 **/android/**/local.properties
 **/android/**/key.properties
+**/android/**/keystore.properties
 **/android/**/.gradle/
 **/android/**/captures/
 **/android/**/.cxx/
 **/android/**/all-targets-build-outputs
 **/android/**/lint-baseline.xml
+/release-key.jks
 
 # coverage
 coverage/

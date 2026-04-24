@@ -7,18 +7,18 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:192373320678:android:00519cef6fdd4ccc744427",
+        "mobilesdk_app_id": "1:192373320678:android:2a658b3488d5ae26744427",
         "android_client_info": {
-          "package_name": "com.example.hub_smart_games"
+          "package_name": "com.wagneraragao.hubsmartgames"
         }
       },
       "oauth_client": [
         {
-          "client_id": "192373320678-7bdmmjpl1brkp5ipo7o9mvn3655hgush.apps.googleusercontent.com",
+          "client_id": "192373320678-v1fs5e59kk5iknkrobvv8bme8to289ja.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.example.hub_smart_games",
-            "certificate_hash": "15c10a2ab8f8696505079d44cbb311e984f2fe44"
+            "package_name": "com.wagneraragao.hubsmartgames",
+            "certificate_hash": "8708f24ec6b6024cc8bf4cb4ff8acac28491e6f5"
           }
         },
         {

@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../models/score.dart';
 import '../../providers/player_provider.dart';
 import '../../providers/score_provider.dart';
+import '../../services/ads_service.dart';
 import '../../theme/app_theme.dart';
 
 enum ReactionState { idle, waiting, ready, result }
@@ -47,7 +48,7 @@ class _ReactionScreenState extends State<ReactionScreen> {
     });
   }
 
-  void _handleTap() {
+  void _handleTap() async {
     if (_state == ReactionState.waiting) {
       _readyTimer?.cancel();
       setState(() {
@@ -66,6 +67,11 @@ class _ReactionScreenState extends State<ReactionScreen> {
         _state = ReactionState.result;
         _message = 'Boa! Tempo: $_reactionTime ms';
       });
+
+      // Mostrar anúncio intersticial após reação bem-sucedida
+      final adsService = context.read<AdsService>();
+      await adsService.showInterstitialAd();
+
       return;
     }
 
@@ -81,13 +87,13 @@ class _ReactionScreenState extends State<ReactionScreen> {
 
     if (player == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecione um jogador antes de salvar.')),
+        const SnackBar(content: Text('Erro: jogador não encontrado.')),
       );
       return;
     }
 
     final score = Score(
-      playerId: player.id,
+      playerId: playerProvider.currentUserId,
       playerName: player.name,
       gameId: 'reaction',
       points: _currentScore,

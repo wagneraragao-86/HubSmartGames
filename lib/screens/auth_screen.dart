@@ -51,11 +51,15 @@ class _AuthScreenState extends State<AuthScreen> {
               // Login Button
               Consumer<AuthProvider>(
                 builder: (context, authProvider, _) {
+                  final isSignedIn = authProvider.isSignedIn;
+                  final isBusy = authProvider.isLoading;
+                  final isDisabled = isBusy || isSignedIn;
+
                   return SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton.icon(
-                      onPressed: authProvider.isLoading
+                      onPressed: isDisabled
                           ? null
                           : () async {
                               final success = await authProvider.signInWithGoogle();
@@ -69,7 +73,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                 );
                               }
                             },
-                      icon: authProvider.isLoading
+                      icon: isBusy
                           ? const SizedBox(
                               width: 20,
                               height: 20,
@@ -79,18 +83,23 @@ class _AuthScreenState extends State<AuthScreen> {
                                     const AlwaysStoppedAnimation<Color>(AppTheme.textPrimary),
                               ),
                             )
-                          : const Icon(Icons.login),
+                          : Icon(isSignedIn ? Icons.verified : Icons.login),
                       label: Text(
-                        authProvider.isLoading ? 'Entrando...' : 'Entrar com Google',
+                        isBusy
+                            ? 'Entrando...'
+                            : isSignedIn
+                                ? 'Já conectado'
+                                : 'Entrar com Google',
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.accentCyan,
+                        backgroundColor: isSignedIn ? AppTheme.border : AppTheme.accentCyan,
                         foregroundColor: AppTheme.textPrimary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                         elevation: 6,
-                        shadowColor: AppTheme.accentCyan.withAlpha(89),
+                        shadowColor:
+                            (isSignedIn ? AppTheme.border : AppTheme.accentCyan).withAlpha(89),
                       ),
                     ),
                   );

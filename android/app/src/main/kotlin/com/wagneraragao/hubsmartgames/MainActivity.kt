@@ -1,4 +1,4 @@
-package com.example.hub_smart_games
+package com.wagneraragao.hubsmartgames
 
 import io.flutter.embedding.android.FlutterActivity
 
