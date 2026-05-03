@@ -51,6 +51,10 @@ class StorageService {
     await _currentPlayerBox_.put('current', playerId);
   }
 
+  Future<void> clearCurrentPlayer() async {
+    await _currentPlayerBox_.delete('current');
+  }
+
   String? getCurrentPlayerId() {
     return _currentPlayerBox_.get('current');
   }
@@ -88,7 +92,9 @@ class StorageService {
   }
 
   List<Score> getAllScores() {
-    return _scoresBox_.values.map((map) => Score.fromMap(Map<String, dynamic>.from(map))).toList();
+    return _scoresBox_.values
+        .map((map) => Score.fromMap(Map<String, dynamic>.from(map)))
+        .toList();
   }
 
   Future<void> transferScores(String fromPlayerId, String toPlayerId) async {
@@ -97,7 +103,7 @@ class StorageService {
       final updatedScore = Score(
         id: score.id,
         playerId: toPlayerId,
-        playerName: score.playerName, // Pode ser atualizado depois se necessário
+        playerName: score.playerName,
         gameId: score.gameId,
         points: score.points,
         duration: score.duration,
@@ -106,55 +112,63 @@ class StorageService {
       );
       await saveScore(updatedScore);
     }
-    // Opcional: remover scores antigos do player anônimo
-    // for (final score in scoresToTransfer) {
-    //   await _scoresBox_.delete('${score.gameId}_${score.id}');
-    // }
   }
 
   // Firebase synchronization methods
   Future<void> syncWithFirebase() async {
-    if (_authService?.isSignedIn == true && _firebaseService != null) {
-      final userId = _authService!.userId!;
-      final userName = _authService!.userName ?? 'Unknown User';
+    final authService = _authService;
+    final firebaseService = _firebaseService;
+    if (authService == null ||
+        !authService.isSignedIn ||
+        firebaseService == null) {
+      return;
+    }
 
-      // Sync player data
-      final localPlayer = getCurrentPlayer();
-      if (localPlayer != null) {
-        final firebasePlayer = Player(
-          id: userId,
-          name: userName,
-          avatar: _authService!.userPhotoUrl,
-          createdAt: localPlayer.createdAt,
-          friendIds: localPlayer.friendIds,
-        );
-        await _firebaseService!.savePlayer(userId, firebasePlayer);
-      }
+    final userId = authService.userId!;
+    final userName = authService.userName ?? 'Unknown User';
 
-      // Sync scores
-      final localScores = getAllScores();
-      for (final score in localScores) {
-        await _firebaseService!.saveScore(userId, score);
-      }
+    // Sync player data
+    final localPlayer = getCurrentPlayer();
+    if (localPlayer != null) {
+      final firebasePlayer = Player(
+        id: userId,
+        name: userName,
+        avatar: authService.userPhotoUrl,
+        createdAt: localPlayer.createdAt,
+        friendIds: localPlayer.friendIds,
+      );
+      await firebaseService.savePlayer(userId, firebasePlayer);
+    }
+
+    // Sync scores
+    final localScores = getAllScores();
+    for (final score in localScores) {
+      await firebaseService.saveScore(userId, score);
     }
   }
 
   Future<void> loadFromFirebase() async {
-    if (_authService?.isSignedIn == true && _firebaseService != null) {
-      final userId = _authService!.userId!;
+    final authService = _authService;
+    final firebaseService = _firebaseService;
+    if (authService == null ||
+        !authService.isSignedIn ||
+        firebaseService == null) {
+      return;
+    }
 
-      // Load player data from Firebase
-      final firebasePlayer = await _firebaseService!.getPlayer(userId);
-      if (firebasePlayer != null) {
-        await savePlayer(firebasePlayer);
-        await setCurrentPlayer(firebasePlayer.id);
-      }
+    final userId = authService.userId!;
 
-      // Load scores from Firebase
-      final firebaseScores = await _firebaseService!.getUserScores(userId);
-      for (final score in firebaseScores) {
-        await saveScore(score);
-      }
+    // Load player data from Firebase
+    final firebasePlayer = await firebaseService.getPlayer(userId);
+    if (firebasePlayer != null) {
+      await savePlayer(firebasePlayer);
+      await setCurrentPlayer(firebasePlayer.id);
+    }
+
+    // Load scores from Firebase
+    final firebaseScores = await firebaseService.getUserScores(userId);
+    for (final score in firebaseScores) {
+      await saveScore(score);
     }
   }
 

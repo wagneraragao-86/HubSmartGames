@@ -28,8 +28,35 @@ class BootstrapApp extends StatefulWidget {
   State<BootstrapApp> createState() => _BootstrapAppState();
 }
 
-class _BootstrapAppState extends State<BootstrapApp> {
+class _BootstrapAppState extends State<BootstrapApp> with WidgetsBindingObserver {
   late final Future<_AppDependencies> _bootstrapFuture = _initialize();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _setImmersiveMode();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  Future<void> _setImmersiveMode() async {
+    await SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.immersiveSticky,
+      overlays: const [],
+    );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _setImmersiveMode();
+    }
+  }
 
   Future<_AppDependencies> _initialize() async {
     await SystemChrome.setPreferredOrientations([
@@ -211,7 +238,10 @@ class MyApp extends StatelessWidget {
           create: (_) => AuthProvider(authService, storageService: storageService),
         ),
         ChangeNotifierProvider(
-          create: (_) => PlayerProvider(storageService),
+          create: (_) => PlayerProvider(
+            storageService,
+            authService: authService,
+          ),
         ),
         ChangeNotifierProvider(
           create: (_) => ScoreProvider(storageService),
