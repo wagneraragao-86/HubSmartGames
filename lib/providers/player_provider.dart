@@ -12,8 +12,7 @@ class PlayerProvider extends ChangeNotifier {
   List<Player> _allPlayers = [];
   String? _anonymousId;
 
-  PlayerProvider(this.storage, {AuthService? authService})
-      : _authService = authService {
+  PlayerProvider(this.storage, {AuthService? authService}) : _authService = authService {
     _loadCurrentPlayer();
     _loadAllPlayers();
   }

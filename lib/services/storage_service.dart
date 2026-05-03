@@ -92,9 +92,7 @@ class StorageService {
   }
 
   List<Score> getAllScores() {
-    return _scoresBox_.values
-        .map((map) => Score.fromMap(Map<String, dynamic>.from(map)))
-        .toList();
+    return _scoresBox_.values.map((map) => Score.fromMap(Map<String, dynamic>.from(map))).toList();
   }
 
   Future<void> transferScores(String fromPlayerId, String toPlayerId) async {
@@ -118,9 +116,7 @@ class StorageService {
   Future<void> syncWithFirebase() async {
     final authService = _authService;
     final firebaseService = _firebaseService;
-    if (authService == null ||
-        !authService.isSignedIn ||
-        firebaseService == null) {
+    if (authService == null || !authService.isSignedIn || firebaseService == null) {
       return;
     }
 
@@ -150,9 +146,7 @@ class StorageService {
   Future<void> loadFromFirebase() async {
     final authService = _authService;
     final firebaseService = _firebaseService;
-    if (authService == null ||
-        !authService.isSignedIn ||
-        firebaseService == null) {
+    if (authService == null || !authService.isSignedIn || firebaseService == null) {
       return;
     }
 
