@@ -9,6 +9,7 @@ import '../../providers/player_provider.dart';
 import '../../providers/score_provider.dart';
 import '../../services/ads_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/game_intro_dialog.dart';
 
 class SnakeScreen extends StatefulWidget {
   const SnakeScreen({Key? key}) : super(key: key);
@@ -20,18 +21,38 @@ class SnakeScreen extends StatefulWidget {
 class _SnakeScreenState extends State<SnakeScreen> {
   late SnakeGame game;
   late Timer gameTimer;
-  int gameDifficulty = 300; // milliseconds entre updates
+  int gameDifficulty = 300;
   static const List<int> snakeSpeeds = [500, 300, 250, 200, 150];
+  Offset? _swipeStart;
+  bool _swipeLocked = false;
 
   @override
   void initState() {
     super.initState();
     game = SnakeGame();
     _startGameLoop();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showGameIntroDialogIfNeeded(
+        context,
+        const GameIntroDialogData(
+          gameId: 'snake',
+          title: 'Como jogar Snake',
+          subtitle: 'Controle a cobra com gestos na tela.',
+          instructions: [
+            'Deslize o dedo na area do jogo para mudar a direção.',
+            'Coma os pontos para crescer e aumentar a pontuação.',
+            'Evite bater nas bordas ou no proprio corpo.',
+            'Use o botão de pausa se precisar parar a partida.',
+          ],
+        ),
+      );
+    });
   }
 
   void _startGameLoop() {
     gameTimer = Timer.periodic(Duration(milliseconds: gameDifficulty), (_) {
+      if (!mounted) return;
       setState(() {
         game.update();
         if (game.isGameOver) {
@@ -53,18 +74,49 @@ class _SnakeScreenState extends State<SnakeScreen> {
     }
   }
 
+  void _handleSwipeStart(DragStartDetails details) {
+    _swipeStart = details.localPosition;
+    _swipeLocked = false;
+  }
+
+  void _handleSwipeUpdate(DragUpdateDetails details) {
+    if (_swipeLocked || _swipeStart == null || game.isPaused || game.isGameOver) {
+      return;
+    }
+
+    final delta = details.localPosition - _swipeStart!;
+    if (delta.distance < 24) {
+      return;
+    }
+
+    _swipeLocked = true;
+
+    if (delta.dx.abs() > delta.dy.abs()) {
+      game.changeDirection(delta.dx > 0 ? Direction.right : Direction.left);
+    } else {
+      game.changeDirection(delta.dy > 0 ? Direction.down : Direction.up);
+    }
+
+    setState(() {});
+  }
+
+  void _handleSwipeEnd(DragEndDetails details) {
+    _swipeStart = null;
+    _swipeLocked = false;
+  }
+
   String _snakeSpeedLabel(int speed) {
     switch (speed) {
       case 500:
-        return 'Fácil';
+        return 'Facil';
       case 300:
         return 'Normal';
       case 250:
-        return 'Rápido';
+        return 'Rapido';
       case 200:
-        return 'Ágil';
+        return 'Agil';
       case 150:
-        return 'Máximo';
+        return 'Maximo';
       default:
         return '$speed ms';
     }
@@ -94,7 +146,6 @@ class _SnakeScreenState extends State<SnakeScreen> {
 
     final stats = game.getGameStats();
 
-    // Mostrar anúncio intersticial
     await adsService.showInterstitialAd();
 
     if (!mounted) return;
@@ -117,7 +168,6 @@ class _SnakeScreenState extends State<SnakeScreen> {
         actions: [
           TextButton(
             onPressed: () {
-              // Salvar score
               if (playerProvider.currentPlayer != null) {
                 final score = Score(
                   playerId: playerProvider.currentUserId,
@@ -139,7 +189,6 @@ class _SnakeScreenState extends State<SnakeScreen> {
           ),
           TextButton(
             onPressed: () {
-              // Salvar score e jogar novamente
               if (playerProvider.currentPlayer != null) {
                 final score = Score(
                   playerId: playerProvider.currentUserId,
@@ -157,6 +206,7 @@ class _SnakeScreenState extends State<SnakeScreen> {
 
               Navigator.pop(context);
               setState(() {
+                gameTimer.cancel();
                 game = SnakeGame();
                 _startGameLoop();
               });
@@ -251,27 +301,30 @@ class _SnakeScreenState extends State<SnakeScreen> {
         ),
         body: Column(
           children: [
-            // Game Area
             Expanded(
-              child: Container(
-                margin: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppTheme.textPrimary),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: CustomPaint(
-                  painter: SnakePainter(game),
-                  child: const SizedBox.expand(),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onPanStart: _handleSwipeStart,
+                onPanUpdate: _handleSwipeUpdate,
+                onPanEnd: _handleSwipeEnd,
+                child: Container(
+                  margin: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppTheme.textPrimary),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: CustomPaint(
+                    painter: SnakePainter(game),
+                    child: const SizedBox.expand(),
+                  ),
                 ),
               ),
             ),
-            // Controls
             Container(
               padding: const EdgeInsets.all(16),
               color: AppTheme.surface,
               child: Column(
                 children: [
-                  // Speed selector
                   Container(
                     width: double.infinity,
                     margin: const EdgeInsets.only(bottom: 16),
@@ -301,8 +354,11 @@ class _SnakeScreenState extends State<SnakeScreen> {
                                 value: speed,
                                 child: Row(
                                   children: [
-                                    Icon(_snakeSpeedIcon(speed),
-                                        size: 18, color: AppTheme.accentCyan),
+                                    Icon(
+                                      _snakeSpeedIcon(speed),
+                                      size: 18,
+                                      color: AppTheme.accentCyan,
+                                    ),
                                     const SizedBox(width: 8),
                                     Text('${_snakeSpeedLabel(speed)} (${speed}ms)'),
                                   ],
@@ -319,23 +375,9 @@ class _SnakeScreenState extends State<SnakeScreen> {
                       ],
                     ),
                   ),
-                  // Direction controls
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_upward, size: 32),
-                        onPressed: () => game.changeDirection(Direction.up),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, size: 32),
-                        onPressed: () => game.changeDirection(Direction.left),
-                      ),
                       IconButton(
                         icon: const Icon(Icons.pause, size: 24),
                         onPressed: () {
@@ -344,28 +386,23 @@ class _SnakeScreenState extends State<SnakeScreen> {
                           });
                         },
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.arrow_forward, size: 32),
-                        onPressed: () => game.changeDirection(Direction.right),
-                      ),
                     ],
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_downward, size: 32),
-                        onPressed: () => game.changeDirection(Direction.down),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
                   Text(
                     game.isPaused ? 'PAUSADO' : '',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.accentRed,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Deslize o dedo na area do jogo para controlar a cobra.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textSecondary,
                     ),
                   ),
                 ],
@@ -387,7 +424,6 @@ class SnakePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final cellSize = size.width / SnakeGame.gridSize;
 
-    // Background
     canvas.drawRect(
       Rect.fromLTWH(0, 0, size.width, size.height),
       Paint()..color = AppTheme.surface,
@@ -411,7 +447,6 @@ class SnakePainter extends CustomPainter {
       );
     }
 
-    // Snake
     for (int i = 0; i < game.snake.length; i++) {
       final point = game.snake[i];
       final isHead = i == 0;
@@ -423,12 +458,11 @@ class SnakePainter extends CustomPainter {
       );
 
       canvas.drawRRect(
-        RRect.fromRectAndRadius(rect, Radius.circular(4)),
+        RRect.fromRectAndRadius(rect, const Radius.circular(4)),
         Paint()..color = isHead ? AppTheme.accentGreen : AppTheme.accentPurple,
       );
     }
 
-    // Food
     final foodRect = Rect.fromLTWH(
       game.food.x * cellSize + 2,
       game.food.y * cellSize + 2,

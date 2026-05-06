@@ -9,6 +9,7 @@ import '../../providers/player_provider.dart';
 import '../../providers/score_provider.dart';
 import '../../services/ads_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/game_intro_dialog.dart';
 
 class SpaceImpactScreen extends StatefulWidget {
   const SpaceImpactScreen({Key? key}) : super(key: key);
@@ -34,6 +35,23 @@ class _SpaceImpactScreenState extends State<SpaceImpactScreen> {
     super.initState();
     game = SpaceImpactGame();
     _startLoop();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showGameIntroDialogIfNeeded(
+        context,
+        const GameIntroDialogData(
+          gameId: 'space_impact',
+          title: 'Como jogar Space Impact',
+          subtitle: 'A nave fica embaixo e os inimigos descem do topo.',
+          instructions: [
+            'Arraste o dedo para mover a nave na area do jogo.',
+            'Segure a tela para disparo continuo.',
+            'Deslize para desviar dos inimigos e projeteis.',
+            'Toque duas vezes para pausar a partida.',
+          ],
+        ),
+      );
+    });
   }
 
   @override
@@ -394,6 +412,7 @@ class SpaceImpactPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    _drawBackgroundFlow(canvas, size);
     _drawStars(canvas);
     _drawExplosions(canvas);
     _drawParticles(canvas);
@@ -403,6 +422,44 @@ class SpaceImpactPainter extends CustomPainter {
     _drawPlayer(canvas);
     _drawBossBar(canvas, size);
     _drawOverlay(canvas, size);
+  }
+
+  void _drawBackgroundFlow(Canvas canvas, Size size) {
+    final basePaint = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          const Color(0xFF040812).withAlpha(255),
+          const Color(0xFF081121).withAlpha(255),
+          const Color(0xFF0C1830).withAlpha(255),
+        ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(Offset.zero & size);
+    canvas.drawRect(Offset.zero & size, basePaint);
+
+    final flowOffset = (game.elapsedMilliseconds * 0.06) % 42;
+    final linePaint = Paint()
+      ..color = const Color(0xFF7EE7FF).withAlpha(12)
+      ..strokeWidth = 1;
+    for (double y = -42 + flowOffset; y < size.height + 42; y += 42) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), linePaint);
+    }
+
+    final lanePaint = Paint()
+      ..color = const Color(0xFF7EE7FF).withAlpha(18)
+      ..strokeWidth = 1.2;
+    for (double x = 0; x <= size.width; x += size.width / 4) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), lanePaint);
+    }
+
+    final centerGlow = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          const Color(0xFF7EE7FF).withAlpha(26),
+          Colors.transparent,
+        ],
+      ).createShader(Rect.fromCenter(center: Offset(size.width / 2, size.height * 0.78), width: size.width * 0.8, height: size.height * 0.7));
+    canvas.drawRect(Offset.zero & size, centerGlow);
   }
 
   void _drawStars(Canvas canvas) {
@@ -464,25 +521,41 @@ class SpaceImpactPainter extends CustomPainter {
   void _drawEnemies(Canvas canvas) {
     for (final enemy in game.enemies) {
       final rect = enemy.rect;
+      final entryProgress = (enemy.spawnAge / 0.45).clamp(0.0, 1.0);
+      final scale = 1.12 - (entryProgress * 0.12);
+      final glowAlpha = (110 * (1 - entryProgress)).round();
+      final scaledRect = Rect.fromCenter(
+        center: rect.center,
+        width: rect.width * scale,
+        height: rect.height * scale,
+      );
       final colors = switch (enemy.kind) {
         EnemyKind.drone => [const Color(0xFFFB7185), const Color(0xFFBE123C)],
         EnemyKind.elite => [const Color(0xFFFFB35B), const Color(0xFFEA580C)],
         EnemyKind.boss => [const Color(0xFFA855F7), const Color(0xFF6D28D9)],
       };
 
+      final glowPaint = Paint()
+        ..color = colors.first.withAlpha(glowAlpha)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(scaledRect.inflate(8), const Radius.circular(14)),
+        glowPaint,
+      );
+
       final paint = Paint()
-        ..shader = LinearGradient(colors: colors).createShader(rect);
+        ..shader = LinearGradient(colors: colors).createShader(scaledRect);
 
       canvas.drawRRect(
-        RRect.fromRectAndRadius(rect, const Radius.circular(10)),
+        RRect.fromRectAndRadius(scaledRect, const Radius.circular(10)),
         paint,
       );
       canvas.drawRRect(
-        RRect.fromRectAndRadius(rect.deflate(6), const Radius.circular(7)),
+        RRect.fromRectAndRadius(scaledRect.deflate(6), const Radius.circular(7)),
         Paint()..color = Colors.white.withAlpha(150),
       );
-      canvas.drawCircle(Offset(rect.left + 14, rect.center.dy), 3, Paint()..color = Colors.black);
-      canvas.drawCircle(Offset(rect.left + 30, rect.center.dy), 3, Paint()..color = Colors.black);
+      canvas.drawCircle(Offset(scaledRect.left + 14, scaledRect.center.dy), 3, Paint()..color = Colors.black);
+      canvas.drawCircle(Offset(scaledRect.left + 30, scaledRect.center.dy), 3, Paint()..color = Colors.black);
     }
   }
 
@@ -542,21 +615,40 @@ class SpaceImpactPainter extends CustomPainter {
     final cockpitPaint = Paint()..color = const Color(0xFFE0F2FE);
 
     final ship = Path()
-      ..moveTo(rect.left, rect.center.dy)
-      ..lineTo(rect.left + 12, rect.top)
-      ..lineTo(rect.right, rect.center.dy)
-      ..lineTo(rect.left + 12, rect.bottom)
+      ..moveTo(rect.center.dx, rect.top)
+      ..lineTo(rect.left, rect.bottom - 2)
+      ..lineTo(rect.center.dx, rect.bottom - 6)
+      ..lineTo(rect.right, rect.bottom - 2)
       ..close();
     canvas.drawShadow(ship, Colors.black, 4, false);
     canvas.drawPath(ship, bodyPaint);
+    canvas.drawPath(
+      Path()
+        ..moveTo(rect.center.dx, rect.top + 4)
+        ..lineTo(rect.center.dx - 8, rect.bottom - 2)
+        ..lineTo(rect.center.dx + 8, rect.bottom - 2)
+        ..close(),
+      Paint()..color = const Color(0xFFBFDBFE).withAlpha(220),
+    );
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromCenter(center: rect.center, width: 14, height: 12),
+        Rect.fromCenter(center: rect.center, width: 12, height: 10),
         const Radius.circular(6),
       ),
       cockpitPaint,
     );
-    canvas.drawCircle(Offset(rect.left + 14, rect.center.dy), 3, wingPaint);
+    canvas.drawCircle(Offset(rect.center.dx - 10, rect.bottom - 8), 3, wingPaint);
+    canvas.drawCircle(Offset(rect.center.dx + 10, rect.bottom - 8), 3, wingPaint);
+    canvas.drawRect(
+      Rect.fromCenter(center: Offset(rect.center.dx, rect.bottom + 4), width: 8, height: 10),
+      Paint()
+        ..shader = const LinearGradient(
+          colors: [Color(0xFF7EE7FF), Color(0x00000000)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ).createShader(Rect.fromCenter(center: Offset(rect.center.dx, rect.bottom + 4), width: 8, height: 12))
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+    );
 
     if (game.hasShield) {
       final ringPaint = Paint()

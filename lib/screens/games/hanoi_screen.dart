@@ -8,6 +8,7 @@ import '../../providers/player_provider.dart';
 import '../../providers/score_provider.dart';
 import '../../services/ads_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/game_intro_dialog.dart';
 
 class HanoiScreen extends StatefulWidget {
   const HanoiScreen({Key? key}) : super(key: key);
@@ -28,6 +29,23 @@ class _HanoiScreenState extends State<HanoiScreen> {
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showGameIntroDialogIfNeeded(
+        context,
+        const GameIntroDialogData(
+          gameId: 'hanoi',
+          title: 'Como jogar Torre de Hanoi',
+          subtitle: 'Mova os discos entre as torres seguindo a regra dos tamanhos.',
+          instructions: [
+            'Toque em uma torre para selecionar um disco.',
+            'Toque em outra torre para mover o disco selecionado.',
+            'Nunca coloque um disco maior sobre um menor.',
+            'Tente resolver com o menor numero de movimentos possível.',
+          ],
+        ),
+      );
+    });
   }
 
   @override

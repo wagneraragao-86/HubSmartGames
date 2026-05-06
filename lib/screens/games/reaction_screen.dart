@@ -9,6 +9,7 @@ import '../../providers/player_provider.dart';
 import '../../providers/score_provider.dart';
 import '../../services/ads_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/game_intro_dialog.dart';
 
 enum ReactionState { idle, waiting, ready, result }
 
@@ -29,6 +30,12 @@ class _ReactionScreenState extends State<ReactionScreen> {
 
   final Random _random = Random();
 
+  @override
+  void initState() {
+    super.initState();
+    _showIntroIfNeeded();
+  }
+
   void _startRound() {
     _readyTimer?.cancel();
     setState(() {
@@ -45,6 +52,26 @@ class _ReactionScreenState extends State<ReactionScreen> {
         _readyAt = DateTime.now();
         _message = 'TOQUE AGORA!';
       });
+    });
+  }
+
+  void _showIntroIfNeeded() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showGameIntroDialogIfNeeded(
+        context,
+        const GameIntroDialogData(
+          gameId: 'reaction',
+          title: 'Como jogar Reação',
+          subtitle: 'Treine sua velocidade de resposta.',
+          instructions: [
+            'Toque em INICIAR para começar uma rodada.',
+            'Espere o botão ficar verde e toque o mais rápido possível.',
+            'Toques prematuros anulam a tentativa.',
+            'Quanto menor o tempo, maior a pontuação.',
+          ],
+        ),
+      );
     });
   }
 

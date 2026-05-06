@@ -66,6 +66,7 @@ class SpaceEnemy {
   double patternCooldown = 0;
   double driftSeed = 0;
   double homeY = 0;
+  double spawnAge = 0;
 
   final double width = 44;
   final double height = 28;
@@ -453,6 +454,8 @@ class SpaceImpactGame {
     return remain / 140;
   }
 
+  int get elapsedMilliseconds => elapsedMs;
+
   double get shieldGlowOpacity {
     if (!hasShield) return 0;
     final remain = (_shieldUntilMs - elapsedMs).clamp(0, 10000);
@@ -517,8 +520,8 @@ class SpaceImpactGame {
     _lastDamageFlashMs = 0;
     _playerVelocityX = 0;
     _playerVelocityY = 0;
-    playerX = _width * 0.16;
-    playerY = _height * 0.5;
+    playerX = _width * 0.5;
+    playerY = _height * 0.84;
     _recordTrailPoint();
   }
 
@@ -587,15 +590,15 @@ class SpaceImpactGame {
     if (hasLaser) {
       _playerShots.add(
         SpaceProjectile(
-          x: playerX + _playerWidth * 0.72,
-          y: playerY + _playerHeight / 2 - 5,
-          vx: 14.0,
-          vy: 0.0,
+          x: playerX - 5,
+          y: playerY - _playerHeight * 0.65,
+          vx: 0.0,
+          vy: -16.0,
           fromPlayer: true,
           damage: 3,
           pierceHits: 4,
-          width: 20,
-          height: 10,
+          width: 10,
+          height: 22,
           color: const Color(0xFF7EE7FF),
           glow: true,
         ),
@@ -604,16 +607,16 @@ class SpaceImpactGame {
     }
 
     if (hasDoubleShot) {
-      _spawnPlayerShot(offsetY: -9, width: 12, damage: 1, pierceHits: 1, glow: false);
-      _spawnPlayerShot(offsetY: 9, width: 12, damage: 1, pierceHits: 1, glow: false);
+      _spawnPlayerShot(offsetX: -9, width: 12, damage: 1, pierceHits: 1, glow: false);
+      _spawnPlayerShot(offsetX: 9, width: 12, damage: 1, pierceHits: 1, glow: false);
       return;
     }
 
-    _spawnPlayerShot(offsetY: 0, width: 12, damage: 1, pierceHits: 1, glow: false);
+    _spawnPlayerShot(offsetX: 0, width: 12, damage: 1, pierceHits: 1, glow: false);
   }
 
   void _spawnPlayerShot({
-    required double offsetY,
+    required double offsetX,
     required double width,
     required int damage,
     required int pierceHits,
@@ -621,15 +624,15 @@ class SpaceImpactGame {
   }) {
     _playerShots.add(
       SpaceProjectile(
-        x: playerX + _playerWidth * 0.72,
-        y: playerY + _playerHeight / 2 - (width / 3) + offsetY,
-        vx: 9.0,
-        vy: 0.0,
+        x: playerX - (width / 2) + offsetX,
+        y: playerY - _playerHeight * 0.7,
+        vx: 0.0,
+        vy: -11.5,
         fromPlayer: true,
         damage: damage,
         pierceHits: pierceHits,
-        width: glow ? 20 : width,
-        height: glow ? 8 : 4,
+        width: glow ? 12 : 6,
+        height: glow ? 24 : 14,
         color: glow ? const Color(0xFF7EE7FF) : const Color(0xFFE0F2FE),
         glow: glow,
       ),
@@ -715,29 +718,27 @@ class SpaceImpactGame {
   }
 
   void _spawnEnemy(SpawnBatch batch, int spawnIndex) {
-    final double y;
+    final double x;
     switch (batch.style) {
       case SpawnStyle.line:
-        y = (_height * (0.18 + ((spawnIndex % 5) * 0.12))).clamp(50.0, _height - 70);
+        x = (_width * (0.10 + ((spawnIndex % 5) * 0.18))).clamp(28.0, _width - 72);
         break;
       case SpawnStyle.zigzag:
-        y = _height * 0.28 + sin((_elapsedFactor / 220) + spawnIndex * 0.8) * (_height * 0.18);
+        x = _width * 0.52 + sin((_elapsedFactor / 220) + spawnIndex * 0.8) * (_width * 0.22);
         break;
       case SpawnStyle.scatter:
-        y = _random.nextDouble() * (_height * 0.76) + (_height * 0.12);
+        x = _random.nextDouble() * (_width * 0.84) + (_width * 0.08);
         break;
       case SpawnStyle.dive:
-        y = _random.nextDouble() * (_height * 0.42) + (_height * 0.08);
+        x = _random.nextDouble() * (_width * 0.76) + (_width * 0.12);
         break;
     }
 
     final enemy = SpaceEnemy(
-      x: _width + 60,
-      y: y,
-      vx: batch.kind == EnemyKind.boss ? batch.speed * 0.55 : -batch.speed,
-      vy: batch.style == SpawnStyle.dive
-          ? (_random.nextBool() ? 1 : -1) * (batch.speed * 0.22)
-          : 0,
+      x: x,
+      y: -92,
+      vx: batch.style == SpawnStyle.dive ? (_random.nextBool() ? 1 : -1) * (batch.speed * 0.16) : 0,
+      vy: batch.kind == EnemyKind.boss ? batch.speed * 0.55 : batch.speed,
       hp: batch.hp,
       maxHp: batch.hp,
       scoreValue: batch.scoreValue,
@@ -746,15 +747,17 @@ class SpaceImpactGame {
     );
 
     enemy.driftSeed = _random.nextDouble() * pi * 2;
-    enemy.homeY = y;
+    enemy.homeY = enemy.y;
+    _spawnEntranceBurst(enemy.x + enemy.width / 2, 0, batch.kind);
 
     if (enemy.kind == EnemyKind.boss) {
-      enemy.x = _width + 80;
-      enemy.y = _height * 0.26;
-      enemy.vx = -batch.speed;
-      enemy.vy = 0;
+      enemy.x = _width * 0.5;
+      enemy.y = -120;
+      enemy.vx = batch.speed * 0.18;
+      enemy.vy = batch.speed * 0.62;
       enemy.patternCooldown = 0.6;
       enemy.fireCooldown = 0.4;
+      _spawnEntranceBurst(enemy.x + enemy.width / 2, 0, enemy.kind, intensity: 1.8);
     }
 
     _enemies.add(enemy);
@@ -762,10 +765,10 @@ class SpaceImpactGame {
 
   void _updateStars(double deltaSeconds) {
     for (final star in _stars) {
-      star.x -= star.speed * deltaSeconds;
-      if (star.x < -4) {
-        star.x = _width + _random.nextDouble() * 24;
-        star.y = _random.nextDouble() * _height;
+      star.y += star.speed * deltaSeconds * 0.65;
+      if (star.y > _height + 4) {
+        star.y = -_random.nextDouble() * 24;
+        star.x = _random.nextDouble() * _width;
       }
     }
   }
@@ -785,7 +788,9 @@ class SpaceImpactGame {
       shot.x += shot.vx * 60 * deltaSeconds;
       shot.y += shot.vy * 60 * deltaSeconds;
     }
-    _playerShots.removeWhere((shot) => shot.x > _width + 34 || shot.y < -34 || shot.y > _height + 34 || shot.pierceHits <= 0);
+    _playerShots.removeWhere(
+      (shot) => shot.y < -34 || shot.y > _height + 34 || shot.x < -34 || shot.x > _width + 34 || shot.pierceHits <= 0,
+    );
   }
 
   void _updateEnemyShots(double deltaSeconds) {
@@ -793,27 +798,30 @@ class SpaceImpactGame {
       shot.x += shot.vx * 60 * deltaSeconds;
       shot.y += shot.vy * 60 * deltaSeconds;
     }
-    _enemyShots.removeWhere((shot) => shot.x < -34 || shot.x > _width + 34 || shot.y < -34 || shot.y > _height + 34 || shot.pierceHits <= 0);
+    _enemyShots.removeWhere(
+      (shot) => shot.y < -34 || shot.y > _height + 34 || shot.x < -34 || shot.x > _width + 34 || shot.pierceHits <= 0,
+    );
   }
 
   void _updateEnemies(double deltaSeconds) {
     final escapedEnemies = <SpaceEnemy>{};
 
     for (final enemy in _enemies) {
+      enemy.spawnAge += deltaSeconds;
       if (enemy.kind == EnemyKind.boss) {
         _updateBoss(enemy, deltaSeconds);
         continue;
       }
 
-      enemy.x += enemy.vx * deltaSeconds;
+      enemy.y += enemy.vy * deltaSeconds;
 
       if (enemy.style == SpawnStyle.dive) {
-        final targetBias = (playerY - enemy.y) * 0.018;
-        enemy.y += (enemy.vy + targetBias) * deltaSeconds * 1.6;
+        final targetBias = (playerX - enemy.x) * 0.015;
+        enemy.x += (enemy.vx + targetBias) * deltaSeconds * 1.6;
       } else if (enemy.style == SpawnStyle.zigzag) {
-        enemy.y += sin((elapsedMs / 160) + enemy.driftSeed) * 0.9;
+        enemy.x += sin((elapsedMs / 160) + enemy.driftSeed) * 0.9;
       } else {
-        enemy.y += sin((elapsedMs / 220) + enemy.driftSeed) * 0.45;
+        enemy.x += sin((elapsedMs / 220) + enemy.driftSeed) * 0.45;
       }
 
       enemy.fireCooldown -= deltaSeconds;
@@ -824,7 +832,7 @@ class SpaceImpactGame {
         _fireAimedEnemyShot(enemy, speed: 5.8, spread: 0);
       }
 
-      if (enemy.x < -90 || enemy.y < -90 || enemy.y > _height + 90) {
+      if (enemy.y > _height + 90 || enemy.x < -90 || enemy.x > _width + 90) {
         escapedEnemies.add(enemy);
       }
     }
@@ -833,17 +841,17 @@ class SpaceImpactGame {
   }
 
   void _updateBoss(SpaceEnemy enemy, double deltaSeconds) {
-    final targetX = _width * 0.67;
-    if (enemy.x > targetX) {
-      enemy.x += enemy.vx * deltaSeconds;
+    final targetY = _height * 0.20;
+    if (enemy.y < targetY) {
+      enemy.y += enemy.vy * deltaSeconds;
     } else {
       enemy.x += sin((elapsedMs / 500) + enemy.driftSeed) * 0.35;
     }
 
-    enemy.y += sin((elapsedMs / 240) + enemy.driftSeed) * 0.8;
+    enemy.x += sin((elapsedMs / 240) + enemy.driftSeed) * 0.8;
 
-    if (enemy.y < _height * 0.12) enemy.y = _height * 0.12;
-    if (enemy.y > _height * 0.68) enemy.y = _height * 0.68;
+    if (enemy.x < _width * 0.10) enemy.x = _width * 0.10;
+    if (enemy.x > _width * 0.82) enemy.x = _width * 0.82;
 
     enemy.patternCooldown -= deltaSeconds;
     if (enemy.patternCooldown <= 0) {
@@ -856,8 +864,32 @@ class SpaceImpactGame {
       };
     }
 
-    if (enemy.x < _width * 0.55) {
-      enemy.x = _width * 0.55;
+    if (enemy.y > _height * 0.32) {
+      enemy.y = _height * 0.32;
+    }
+  }
+
+  void _spawnEntranceBurst(double x, double y, EnemyKind kind, {double intensity = 1}) {
+    final count = kind == EnemyKind.boss ? 16 : kind == EnemyKind.elite ? 10 : 6;
+    final color = switch (kind) {
+      EnemyKind.drone => const Color(0xFFFF6B7A),
+      EnemyKind.elite => const Color(0xFFFFB35B),
+      EnemyKind.boss => const Color(0xFFEA7CFF),
+    };
+    for (var i = 0; i < count; i += 1) {
+      final angle = pi + (_random.nextDouble() - 0.5) * 0.9;
+      final speed = (60 + _random.nextDouble() * 110) * intensity;
+      _particles.add(
+        BurstParticle(
+          x: x,
+          y: y,
+          vx: cos(angle) * speed,
+          vy: sin(angle) * speed.abs(),
+          life: 0.34 + _random.nextDouble() * 0.16,
+          color: color,
+          size: 1.8 + _random.nextDouble() * 2.2,
+        ),
+      );
     }
   }
 
@@ -875,15 +907,15 @@ class SpaceImpactGame {
 
   void _fireBossPattern(SpaceEnemy enemy) {
     final pattern = _bossPatternFor(enemy);
-    final originX = enemy.x - 4;
-    final originY = enemy.y + enemy.height * 0.5;
+    final originX = enemy.x + enemy.width * 0.5;
+    final originY = enemy.y + enemy.height + 4;
 
     switch (pattern) {
       case BossPattern.spread:
         _enemyShots.addAll([
-          _createEnemyBullet(originX, originY, -7.0, -1.6, 2, 10, 10, const Color(0xFFFFA36A)),
-          _createEnemyBullet(originX, originY, -7.6, 0.0, 2, 10, 10, const Color(0xFFFFA36A)),
-          _createEnemyBullet(originX, originY, -7.0, 1.6, 2, 10, 10, const Color(0xFFFFA36A)),
+          _createEnemyBullet(originX, originY, -1.8, 7.0, 2, 10, 10, const Color(0xFFFFA36A)),
+          _createEnemyBullet(originX, originY, 0.0, 7.6, 2, 10, 10, const Color(0xFFFFA36A)),
+          _createEnemyBullet(originX, originY, 1.8, 7.0, 2, 10, 10, const Color(0xFFFFA36A)),
         ]);
         break;
       case BossPattern.aimedBurst:
@@ -1268,7 +1300,12 @@ class SpaceImpactGame {
     isGameOver = true;
   }
 
-  Rect get playerRect => Rect.fromLTWH(playerX - 18, playerY - 14, _playerWidth, _playerHeight);
+  Rect get playerRect => Rect.fromLTWH(
+        playerX - _playerWidth / 2,
+        playerY - _playerHeight / 2,
+        _playerWidth,
+        _playerHeight,
+      );
 
   void _recordTrailPoint() {
     _playerTrail.add(Offset(playerX, playerY));

@@ -8,10 +8,12 @@ class StorageService {
   static const String _playersBox = 'players';
   static const String _scoresBox = 'scores';
   static const String _currentPlayerBox = 'current_player';
+  static const String _settingsBox = 'settings';
 
   late Box<Map> _playersBox_;
   late Box<Map> _scoresBox_;
   late Box<String> _currentPlayerBox_;
+  late Box _settingsBox_;
 
   final AuthService? _authService;
   final FirebaseService? _firebaseService;
@@ -24,6 +26,7 @@ class StorageService {
     _playersBox_ = await Hive.openBox<Map>(_playersBox);
     _scoresBox_ = await Hive.openBox<Map>(_scoresBox);
     _currentPlayerBox_ = await Hive.openBox<String>(_currentPlayerBox);
+    _settingsBox_ = await Hive.openBox(_settingsBox);
   }
 
   // Player operations
@@ -57,6 +60,14 @@ class StorageService {
 
   String? getCurrentPlayerId() {
     return _currentPlayerBox_.get('current');
+  }
+
+  Future<void> setGameIntroSeen(String gameId, bool seen) async {
+    await _settingsBox_.put('game_intro_seen_$gameId', seen);
+  }
+
+  bool hasSeenGameIntro(String gameId) {
+    return _settingsBox_.get('game_intro_seen_$gameId', defaultValue: false) as bool;
   }
 
   Player? getCurrentPlayer() {
@@ -170,5 +181,6 @@ class StorageService {
     await _playersBox_.close();
     await _scoresBox_.close();
     await _currentPlayerBox_.close();
+    await _settingsBox_.close();
   }
 }

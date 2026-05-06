@@ -9,6 +9,7 @@ import '../../providers/player_provider.dart';
 import '../../providers/score_provider.dart';
 import '../../services/ads_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/game_intro_dialog.dart';
 
 class HidroFluxScreen extends StatefulWidget {
   const HidroFluxScreen({Key? key}) : super(key: key);
@@ -44,6 +45,23 @@ class _HidroFluxScreenState extends State<HidroFluxScreen> with SingleTickerProv
     );
 
     _loadLevel();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showGameIntroDialogIfNeeded(
+        context,
+        const GameIntroDialogData(
+          gameId: 'hidro_flux',
+          title: 'Como jogar Hidro Flux',
+          subtitle: 'Gire os canos para levar a água até o destino.',
+          instructions: [
+            'Toque em um cano para girá-lo.',
+            'Conecte corretamente o caminho da água até a saída.',
+            'Use o botão TESTAR CAMINHO quando achar que terminou.',
+            'Cada fase pede um raciocínio rápido e preciso.',
+          ],
+        ),
+      );
+    });
   }
 
   void _loadLevel() {

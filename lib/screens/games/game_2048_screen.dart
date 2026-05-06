@@ -7,6 +7,7 @@ import '../../providers/player_provider.dart';
 import '../../providers/score_provider.dart';
 import '../../services/ads_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/game_intro_dialog.dart';
 
 class Game2048Screen extends StatefulWidget {
   const Game2048Screen({Key? key}) : super(key: key);
@@ -27,6 +28,23 @@ class _Game2048ScreenState extends State<Game2048Screen> {
   void initState() {
     super.initState();
     game = Game2048();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showGameIntroDialogIfNeeded(
+        context,
+        const GameIntroDialogData(
+          gameId: '2048',
+          title: 'Como jogar 2048',
+          subtitle: 'Deslize os blocos para combinar numeros iguais.',
+          instructions: [
+            'Deslize para mover todos os blocos na mesma direção.',
+            'Quando dois blocos iguais se encontram, eles se juntam.',
+            'O objetivo é chegar ao bloco 2048.',
+            'Planeje cada movimento para não travar o tabuleiro.',
+          ],
+        ),
+      );
+    });
   }
 
   void _restartGame() {
